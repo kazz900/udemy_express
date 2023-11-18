@@ -16,14 +16,15 @@ exports.postAddProduct = (req, res, next) => {
   const imageUrl = req.body.imageUrl;
   const price = req.body.price;
   const description = req.body.description;
-  // INSERT
-  Product.create({
+  // sequelize special method INSERT TO product with association
+  req.user
+  .createProduct({
     title: title,
     price: price,
     imageUrl: imageUrl,
     description: description
-  }).then((result)=> {
-    console.log('Created product');
+  })
+  .then((result)=> {
     res.redirect('/admin/products');
   })
   .catch((err) => {
@@ -39,8 +40,10 @@ exports.getEditProduct = (req, res, next) => {
   // in get method, we can access query url from req.params
   const prodId = req.params.productId;
 
-  Product.findByPk(prodId)
-  .then(product => {
+  req.user.getProducts({
+    where: {id: prodId}})
+  .then(products => {
+    const product = products[0];
     if(!product){
       return res.redirect('/');
     }
@@ -78,7 +81,8 @@ exports.postEditProduct = (req, res, next) => {
 };
 
 exports.getProducts = (req, res, next) => {
-  Product.findAll()
+  req.user
+  .getProducts()
   .then((products) => {
     res.render('admin/products', {
       prods: products,
