@@ -8,7 +8,7 @@ exports.getAddProduct = (req, res, next) => {
     productCSS: true,
     activeAddProduct: true,
     editing: false,
-    isAuthenticated: req.isLoggedIn
+    isAuthenticated: req.session.isLoggedIn
   });
 };
 
@@ -17,20 +17,20 @@ exports.postAddProduct = (req, res, next) => {
   const imageUrl = req.body.imageUrl;
   const price = req.body.price;
   const description = req.body.description;
+  
   // sequelize special method INSERT TO product with association
-  req.user
-  .createProduct({
+  const product = new Product({
     title: title,
     price: price,
     imageUrl: imageUrl,
     description: description
-  })
-  .then((result)=> {
+  });
+
+  product.save()
+  .then(result => {
     res.redirect('/admin/products');
   })
-  .catch((err) => {
-    console.log(err);
-  });
+  .catch(err => console.log(err));
 };
 
 exports.getEditProduct = (req, res, next) => {
@@ -41,8 +41,10 @@ exports.getEditProduct = (req, res, next) => {
   // in get method, we can access query url from req.params
   const prodId = req.params.productId;
 
-  req.user.getProducts({
-    where: {id: prodId}})
+  Product.findAll({
+    where: {
+    id: prodId
+  }})
   .then(products => {
     const product = products[0];
     if(!product){
@@ -53,7 +55,7 @@ exports.getEditProduct = (req, res, next) => {
       path: '/admin/edit-product',
       editing: editMode,
       product: product,
-      isAuthenticated: req.isLoggedIn
+      isAuthenticated: req.session.isLoggedIn
     });
   })
   .catch((err) => {
@@ -83,14 +85,13 @@ exports.postEditProduct = (req, res, next) => {
 };
 
 exports.getProducts = (req, res, next) => {
-  req.user
-  .getProducts()
+  Product.findAll()
   .then((products) => {
     res.render('admin/products', {
       prods: products,
       pageTitle: 'Admin Products',
       path: '/admin/products',
-      isAuthenticated: req.isLoggedIn
+      isAuthenticated: req.session.isLoggedIn
     });
   })
   .catch((err) => {
