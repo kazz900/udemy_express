@@ -5,11 +5,20 @@ const errorController = require('./controllers/error');
 // session import
 const session = require('express-session');
 // Sequelize import
-const { Sequelize, DataTypes } = require('sequelize');
-const SequelizeStore = require('connect-session-sequelize')(session.Store);
+// const { Sequelize, DataTypes } = require('sequelize');
+// const SequelizeStore = require('connect-session-sequelize')(session.Store);
+
+// MONGODB
+const MongoDBStore = require('connect-mongodb-session')(session);
 
 // MongoDB import
 const mongoConnect = require('./util/mongodbsetting');
+const mongoose = require('mongoose');
+const MONGODB_URI = 'mongodb+srv://root:root@cluster0.19xed2k.mongodb.net/?retryWrites=true&w=majority';
+const store = new MongoDBStore({
+    uri: MONGODB_URI,
+    collection: 'sessions'
+  });
 
 // sequelize model imports
 const sequelize = require('./util/database');
@@ -30,35 +39,6 @@ const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
 const authRoutes = require('./routes/auth');
 
-// STORE EXTENDDEFAULTFIELDS
-// sequelize.define("Session", {
-//     sid: {
-//       type: Sequelize.STRING,
-//       primaryKey: true,
-//     },
-//     userId: Sequelize.STRING,
-//     expires: Sequelize.DATE,
-//     data: Sequelize.TEXT,
-//     isLoggedin: DataTypes.BOOLEAN
-// });
-
-// function extendDefaultFields(defaults, session) {
-//     return {
-//         data: defaults.data,
-//         expires: defaults.expires,
-//         userId: session.userId,
-//         isLoggedin: session.isLoggedin
-//     };
-// }
-
-// sequelizeStore setting
-const store = new SequelizeStore({
-    db: sequelize,
-    // table: "Session",
-    checkExpirationInterval: 1 * 60 * 60 * 1000, // every 1 hour
-    expiration: 30 * 60 * 1000, // expires in 5 min
-});
-
 // register middleware
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -69,16 +49,47 @@ app.use(session({
     saveUninitialized: false,
 }));
 
+// add middleware so that req.user is an object
+app.use((req, res, next) => {
+  if(!req.session.user){
+    return next();
+  }
+  User.findById(req.session.user._id)
+    .then(user => {
+      console.log(user);
+      req.user = user;
+      next();
+    })
+    .catch(err => console.log(err));
+});
+
 app.use('/admin', adminRoutes);
 app.use(shopRoutes);
 app.use(authRoutes);
 app.use(errorController.get404);
 
-// -------------- Mongodb --------------------
-mongoConnect(client => {
+// -------------- Mongodb connection --------------------
+mongoose
+  .connect(MONGODB_URI)
+  .then(result => {
+    User.findOne().then(user => {
+      if (!user) {
+        const user = new User({
+          name: 'Max',
+          email: 'max@test.com',
+          cart: {
+            items: []
+          }
+        });
+        user.save();
+      }
+    });
+    console.log(`Server started`);
     app.listen(50000);
-});
-
+  })
+  .catch(err => {
+    console.log(err);
+  });
 
 // -------------- SQL -----------------------
 
