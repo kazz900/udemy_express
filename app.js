@@ -12,7 +12,6 @@ const session = require('express-session');
 const MongoDBStore = require('connect-mongodb-session')(session);
 
 // MongoDB import
-const mongoConnect = require('./util/mongodbsetting');
 const mongoose = require('mongoose');
 const MONGODB_URI = 'mongodb+srv://root:root@cluster0.19xed2k.mongodb.net/?retryWrites=true&w=majority';
 const store = new MongoDBStore({
@@ -85,7 +84,7 @@ mongoose
       }
     });
     console.log(`Server started`);
-    app.listen(50000);
+    app.listen(30000);
   })
   .catch(err => {
     console.log(err);
