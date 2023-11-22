@@ -68,11 +68,13 @@ app.use(authRoutes);
 app.use(errorController.get404);
 
 // -------------- Mongodb connection --------------------
+const port = 30000;
+
 mongoose
   .connect(MONGODB_URI)
   .then(result => {
-    console.log(`Server started`);
-    app.listen(30000);
+    console.log(`Server started litsening on ${port}`);
+    app.listen(port);
   })
   .catch(err => {
     console.log(err);
