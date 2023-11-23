@@ -17,7 +17,7 @@ const MONGODB_URI = 'mongodb+srv://root:root@cluster0.19xed2k.mongodb.net/?retry
 const store = new MongoDBStore({
     uri: MONGODB_URI,
     collection: 'sessions'
-  });
+});
 
 // sequelize model imports
 const sequelize = require('./util/database');
@@ -50,16 +50,15 @@ app.use(session({
 
 // add middleware so that req.user is an object
 app.use((req, res, next) => {
-  if(!req.session.user){
-    return next();
-  }
-  User.findById(req.session.user._id)
-    .then(user => {
-      console.log(user);
-      req.user = user;
-      next();
-    })
-    .catch(err => console.log(err));
+    if (!req.session.user) {
+        return next();
+    }
+    User.findById(req.session.user._id)
+        .then(user => {
+            req.user = user;
+            next();
+        })
+        .catch(err => console.log(err));
 });
 
 app.use('/admin', adminRoutes);
@@ -69,14 +68,14 @@ app.use(errorController.get404);
 
 // -------------- Mongodb connection --------------------
 mongoose
-  .connect(MONGODB_URI)
-  .then(result => {
-    console.log(`Server started`);
-    app.listen(30000);
-  })
-  .catch(err => {
-    console.log(err);
-  });
+    .connect(MONGODB_URI)
+    .then(result => {
+        console.log(`Server started`);
+        app.listen(30000);
+    })
+    .catch(err => {
+        console.log(err);
+    });
 
 // -------------- SQL -----------------------
 
