@@ -8,6 +8,9 @@ const session = require('express-session');
 // const { Sequelize, DataTypes } = require('sequelize');
 // const SequelizeStore = require('connect-session-sequelize')(session.Store);
 
+// CSURF 
+const csrf = require('csurf');
+
 // MONGODB
 const MongoDBStore = require('connect-mongodb-session')(session);
 
@@ -18,6 +21,9 @@ const store = new MongoDBStore({
     uri: MONGODB_URI,
     collection: 'sessions'
 });
+
+// CSRF 
+const csrfProtection = csrf();
 
 // sequelize model imports
 const sequelize = require('./util/database');
@@ -48,6 +54,9 @@ app.use(session({
     saveUninitialized: false,
 }));
 
+// Using csrf middleware after session
+app.use(csrfProtection);
+
 // add middleware so that req.user is an object
 app.use((req, res, next) => {
     if (!req.session.user) {
@@ -59,6 +68,13 @@ app.use((req, res, next) => {
             next();
         })
         .catch(err => console.log(err));
+});
+
+// Tell Express.js that it should be included in every rendred view
+app.use((req, res ,next) => {
+  res.locals.isAuthenticated = req.session.isLoggedIn;
+  res.locals.csrfToken = req.csrfToken();
+  next();
 });
 
 app.use('/admin', adminRoutes);
