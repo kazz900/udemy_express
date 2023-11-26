@@ -10,6 +10,7 @@ const session = require('express-session');
 
 // CSURF 
 const csrf = require('csurf');
+const flash = require('connect-flash');
 
 // MONGODB
 const MongoDBStore = require('connect-mongodb-session')(session);
@@ -56,6 +57,8 @@ app.use(session({
 
 // Using csrf middleware after session
 app.use(csrfProtection);
+// connect-flash (after session)
+app.use(flash());
 
 // add middleware so that req.user is an object
 app.use((req, res, next) => {

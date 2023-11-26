@@ -233,4 +233,22 @@ form {
   #side-menu-toggle {
     display: none;
   }
+  .user-message{
+    width: 15rem;
+  }
+}
+
+.user-message{
+  text-align: center;
+  margin: auto;
+  width: 30%;
+  border: 1px solid rgb(0, 68, 255);
+  padding: 1rem;
+  border-radius: 3px;
+  background: rgb(141, 188, 255);
+}
+
+.user-message--error{
+  border-color: red;
+  background: rgb(250, 109, 109);
 }
