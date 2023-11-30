@@ -79,7 +79,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 // multer
 app.use(
-  multer({ storage: fileStorage, fileFilter: fileFilter}).array('image')
+  multer({ storage: fileStorage, fileFilter: fileFilter}).single('image')
 );
 
 app.use(express.static(path.join(__dirname, 'public')));
