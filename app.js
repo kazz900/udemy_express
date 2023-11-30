@@ -48,7 +48,7 @@ const fileStorage = multer.diskStorage({
     cb(null, 'images');
   },
   filename: (req, file, cb) => {
-    cb(null, new Date().toISOString() + '-' + file.originalname);
+    cb(null, Date.now().toLocaleString() + '-' + file.originalname);
   }
 });
 
@@ -79,11 +79,10 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 // multer
 app.use(
-  multer({ storage: fileStorage, fileFilter: fileFilter }).single('image')
+  multer({ storage: fileStorage}).single('image')
 );
 
 app.use(express.static(path.join(__dirname, 'public')));
-
 
 app.use(session({
   secret: "test secret",
@@ -108,8 +107,6 @@ app.use((req, res, next) => {
 
 // add middleware so that req.user is an object
 app.use((req, res, next) => {
-  // outside of async code we can just throw an error
-  // throw new Error('Sync Dummy');
   if (!req.session.user) {
     return next();
   }
@@ -142,11 +139,7 @@ app.use(errorController.get404);
 app.use((error, req, res, next) => {
   // res.status(error.httpStatusCode).render(...);
   // res.redirect('/500');
-  res.status(500).render('500', {
-    pageTitle: 'Error!',
-    path: '/500',
-    isAuthenticated: req.session.isLoggedIn
-  });
+  res.redirect('/500');
 });
 
 // -------------- Mongodb connection --------------------
