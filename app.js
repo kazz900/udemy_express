@@ -8,9 +8,14 @@ const session = require('express-session');
 // const { Sequelize, DataTypes } = require('sequelize');
 // const SequelizeStore = require('connect-session-sequelize')(session.Store);
 
+// multer
+const multer = require('multer');
+
 // CSURF 
 const csrf = require('csurf');
 const flash = require('connect-flash');
+
+const app = express();
 
 // MONGODB
 const MongoDBStore = require('connect-mongodb-session')(session);
@@ -26,6 +31,7 @@ const store = new MongoDBStore({
 // CSRF 
 const csrfProtection = csrf();
 
+
 // sequelize model imports
 const sequelize = require('./util/database');
 const Product = require('./models/product');
@@ -35,7 +41,29 @@ const CartItem = require('./models/cart-item');
 const Order = require('./models/order');
 const OrderItem = require('./models/order-items');
 
-const app = express();
+
+// File storage configuration
+const fileStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'images');
+  },
+  filename: (req, file, cb) => {
+    cb(null, new Date().toISOString() + '-' + file.originalname);
+  }
+});
+
+// Multer file filter
+const fileFilter = (req, file, cb) => {
+  if (
+    file.mimetype === 'image/png' ||
+    file.mimetype === 'image/jpg' ||
+    file.mimetype === 'image/jpeg'
+  ) {
+    cb(null, true);
+  } else {
+    cb(null, false);
+  }
+};
 
 app.set('view engine', 'ejs');
 app.set('views', 'views');
@@ -46,14 +74,24 @@ const shopRoutes = require('./routes/shop');
 const authRoutes = require('./routes/auth');
 
 // register middleware
+// body parser
 app.use(bodyParser.urlencoded({ extended: false }));
+
+// multer
+app.use(
+  multer({ storage: fileStorage, fileFilter: fileFilter }).single('image')
+);
+
 app.use(express.static(path.join(__dirname, 'public')));
+
+
 app.use(session({
   secret: "test secret",
   store: store,
   resave: false,
   saveUninitialized: false,
 }));
+
 
 // Using csrf middleware after session
 app.use(csrfProtection);
@@ -67,6 +105,7 @@ app.use((req, res, next) => {
   next();
 });
 
+
 // add middleware so that req.user is an object
 app.use((req, res, next) => {
   // outside of async code we can just throw an error
@@ -75,12 +114,11 @@ app.use((req, res, next) => {
     return next();
   }
   User.findById(req.session.user._id)
-    .then(user => {
+  .then(user => {
       // if user is null return next
       if (!user) {
         return next();
       }
-
       // making user object available
       req.user = user;
       next();
@@ -102,6 +140,8 @@ app.use(errorController.get404);
 
 // middleware for error handling
 app.use((error, req, res, next) => {
+  // res.status(error.httpStatusCode).render(...);
+  // res.redirect('/500');
   res.status(500).render('500', {
     pageTitle: 'Error!',
     path: '/500',
@@ -119,8 +159,9 @@ mongoose
     app.listen(port);
   })
   .catch(err => {
-    console.log(err);
-  });
+    // inside async code, we need to use next
+    next(new Error(err));
+});
 
 // -------------- SQL -----------------------
 
