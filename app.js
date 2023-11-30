@@ -60,19 +60,6 @@ app.use(csrfProtection);
 // connect-flash (after session)
 app.use(flash());
 
-// add middleware so that req.user is an object
-app.use((req, res, next) => {
-  if (!req.session.user) {
-    return next();
-  }
-  User.findById(req.session.user._id)
-    .then(user => {
-      req.user = user;
-      next();
-    })
-    .catch(err => console.log(err));
-});
-
 // Tell Express.js that it should be included in every rendred view
 app.use((req, res, next) => {
   res.locals.isAuthenticated = req.session.isLoggedIn;
@@ -80,10 +67,47 @@ app.use((req, res, next) => {
   next();
 });
 
+// add middleware so that req.user is an object
+app.use((req, res, next) => {
+  // outside of async code we can just throw an error
+  // throw new Error('Sync Dummy');
+  if (!req.session.user) {
+    return next();
+  }
+  User.findById(req.session.user._id)
+    .then(user => {
+      // if user is null return next
+      if (!user) {
+        return next();
+      }
+
+      // making user object available
+      req.user = user;
+      next();
+    })
+    .catch(err => {
+      // inside async code, we need to use next
+      next(new Error(err));
+    });
+});
+
 app.use('/admin', adminRoutes);
 app.use(shopRoutes);
 app.use(authRoutes);
+
+app.get('/500', errorController.get500);
+
+// for every routes that are not handled
 app.use(errorController.get404);
+
+// middleware for error handling
+app.use((error, req, res, next) => {
+  res.status(500).render('500', {
+    pageTitle: 'Error!',
+    path: '/500',
+    isAuthenticated: req.session.isLoggedIn
+  });
+});
 
 // -------------- Mongodb connection --------------------
 const port = 30000;
